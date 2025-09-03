@@ -11,7 +11,7 @@ from pathlib import Path
 app = Flask(__name__)
 
 # 版本信息
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.2.3"
 
 # 全局变量存储下载任务
 download_queue = queue.Queue()
@@ -35,7 +35,7 @@ HTML_TEMPLATE = """
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
-            padding-bottom: 60px; /* 为底部版本信息留空间 */
+            padding-bottom: 60px;
         }
         .container {
             max-width: 1200px;
@@ -290,10 +290,207 @@ HTML_TEMPLATE = """
         .footer a:hover {
             text-decoration: underline;
         }
+        
+        /* 自定义通知样式 */
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .notification {
+            background: white;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            max-width: 400px;
+            animation: slideIn 0.3s ease-out;
+            position: relative;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .notification.removing {
+            animation: slideOut 0.3s ease-in;
+        }
+        
+        .notification-icon {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+        
+        .notification.success {
+            border-left: 4px solid #48bb78;
+        }
+        
+        .notification.error {
+            border-left: 4px solid #f56565;
+        }
+        
+        .notification.info {
+            border-left: 4px solid #4299e1;
+        }
+        
+        .notification.warning {
+            border-left: 4px solid #f6ad55;
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #2d3748;
+        }
+        
+        .notification-message {
+            color: #718096;
+            font-size: 14px;
+        }
+        
+        .notification-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            color: #a0aec0;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            padding: 4px;
+        }
+        
+        .notification-close:hover {
+            color: #4a5568;
+        }
+        
+        /* 自定义确认对话框 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            transform: scale(0.9);
+            transition: transform 0.3s;
+        }
+        
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #2d3748;
+        }
+        
+        .modal-message {
+            color: #718096;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .modal-button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .modal-button.primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .modal-button.primary:hover {
+            background: #5a67d8;
+        }
+        
+        .modal-button.secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .modal-button.secondary:hover {
+            background: #cbd5e0;
+        }
+        
         @media (max-width: 768px) {
             .header h1 { font-size: 1.8em; }
             .button-group { flex-direction: column; }
             button { width: 100%; }
+            .notification-container {
+                left: 20px;
+                right: 20px;
+                top: 10px;
+            }
+            .notification {
+                min-width: auto;
+                max-width: none;
+            }
         }
     </style>
 </head>
@@ -446,7 +643,7 @@ HTML_TEMPLATE = """
                         <div class="checkbox-group">
                             <label><input type="checkbox" name="skip_mux"> 跳过混流</label>
                             <label><input type="checkbox" name="force_http"> 强制HTTP</label>
-                            <label><input type="checkbox" name="show_all"> 显示所有分P标题</label>
+                            <label><input type="checkbox" name="show_all"> 显示所有分P</label>
                             <label><input type="checkbox" name="use_mp4box"> 使用MP4Box混流</label>
                         </div>
                     </div>
@@ -555,10 +752,147 @@ HTML_TEMPLATE = """
         <a href="https://github.com" target="_blank">GitHub</a>
     </div>
 
+    <!-- 通知容器 -->
+    <div class="notification-container" id="notification-container"></div>
+
+    <!-- 确认对话框 -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <div class="modal-title" id="modal-title">确认</div>
+            <div class="modal-message" id="modal-message">您确定要执行此操作吗？</div>
+            <div class="modal-buttons">
+                <button class="modal-button secondary" onclick="closeModal(false)">取消</button>
+                <button class="modal-button primary" id="modal-confirm">确定</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let currentTaskId = null;
         let logUpdateInterval = null;
         let currentWorkDir = '~/Downloads/BBDown-Web';
+        let activeNewTaskId = null;  // 记录当前活动的新任务ID
+        let userIsScrolling = false;  // 标记用户是否正在滚动
+        let autoScrollEnabled = true;  // 是否启用自动滚动
+        let justSwitchedTask = false;  // 标记是否刚切换任务
+
+        // 监听日志输出区的滚动事件
+        document.addEventListener('DOMContentLoaded', function() {
+            const logOutput = document.getElementById('log-output');
+            
+            // 监听滚动事件
+            logOutput.addEventListener('scroll', function() {
+                // 如果刚切换任务，不处理这个滚动事件
+                if (justSwitchedTask) {
+                    justSwitchedTask = false;
+                    return;
+                }
+                
+                const scrollTop = logOutput.scrollTop;
+                const scrollHeight = logOutput.scrollHeight;
+                const clientHeight = logOutput.clientHeight;
+                
+                // 如果用户滚动到底部附近（误差10px），启用自动滚动
+                if (scrollHeight - scrollTop - clientHeight < 10) {
+                    autoScrollEnabled = true;
+                } else {
+                    // 用户向上滚动，禁用自动滚动
+                    autoScrollEnabled = false;
+                }
+            });
+            
+            // 鼠标进入日志区域时，暂时禁用自动滚动
+            logOutput.addEventListener('mouseenter', function() {
+                userIsScrolling = true;
+            });
+            
+            // 鼠标离开日志区域后，检查是否在底部
+            logOutput.addEventListener('mouseleave', function() {
+                userIsScrolling = false;
+                const scrollTop = logOutput.scrollTop;
+                const scrollHeight = logOutput.scrollHeight;
+                const clientHeight = logOutput.clientHeight;
+                
+                // 如果在底部附近，重新启用自动滚动
+                if (scrollHeight - scrollTop - clientHeight < 10) {
+                    autoScrollEnabled = true;
+                }
+            });
+        });
+
+        // 通知系统
+        function showNotification(message, type = 'info', title = '') {
+            const container = document.getElementById('notification-container');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                info: 'ℹ️',
+                warning: '⚠️'
+            };
+            
+            const titles = {
+                success: '成功',
+                error: '错误',
+                info: '提示',
+                warning: '警告'
+            };
+            
+            notification.innerHTML = `
+                <div class="notification-icon">${icons[type]}</div>
+                <div class="notification-content">
+                    <div class="notification-title">${title || titles[type]}</div>
+                    <div class="notification-message">${message}</div>
+                </div>
+                <button class="notification-close" onclick="removeNotification(this.parentElement)">×</button>
+            `;
+            
+            container.appendChild(notification);
+            
+            // 自动移除通知
+            setTimeout(() => {
+                removeNotification(notification);
+            }, 5000);
+        }
+        
+        function removeNotification(notification) {
+            if (!notification || !notification.parentElement) return;
+            notification.classList.add('removing');
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 300);
+        }
+
+        // 自定义确认对话框
+        function showConfirm(message, title = '确认', callback = null) {
+            const overlay = document.getElementById('modal-overlay');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            const confirmBtn = document.getElementById('modal-confirm');
+            
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            
+            overlay.classList.add('active');
+            
+            // 移除旧的事件监听器
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            
+            newConfirmBtn.onclick = () => {
+                closeModal(true);
+                if (callback) callback();
+            };
+        }
+        
+        function closeModal(result) {
+            const overlay = document.getElementById('modal-overlay');
+            overlay.classList.remove('active');
+        }
 
         function switchTab(event, tabName) {
             // 移除所有活动状态
@@ -644,7 +978,7 @@ HTML_TEMPLATE = """
             
             // 验证并提取URL
             if (!data.url || data.url.trim() === '') {
-                alert('请输入视频地址');
+                showNotification('请输入视频地址', 'warning');
                 return;
             }
             
@@ -684,23 +1018,25 @@ HTML_TEMPLATE = """
                 const result = await response.json();
                 if (result.success) {
                     currentTaskId = result.task_id;
+                    activeNewTaskId = result.task_id;  // 记录新任务ID
+                    autoScrollEnabled = true;  // 新任务默认启用自动滚动
                     showLog();
-                    startLogUpdate(currentTaskId);
+                    startLogUpdate(currentTaskId, true);  // 新任务，自动滚动
                     // 切换到状态标签页
                     document.querySelector('.tab:nth-child(2)').click();
-                    alert('下载任务已添加到队列');
+                    showNotification('下载任务已添加到队列', 'success');
                 } else {
-                    alert('错误: ' + result.message);
+                    showNotification(result.message, 'error');
                 }
             } catch (error) {
-                alert('请求失败: ' + error);
+                showNotification('请求失败: ' + error, 'error');
             }
         }
 
         async function parseOnly() {
             let url = document.getElementById('url').value;
             if (!url) {
-                alert('请输入视频地址');
+                showNotification('请输入视频地址', 'warning');
                 return;
             }
             
@@ -724,32 +1060,39 @@ HTML_TEMPLATE = """
                     const logOutput = document.getElementById('log-output');
                     // 使用innerHTML显示带颜色的日志
                     logOutput.innerHTML = formatLogHtml(data.info);
+                    showNotification('解析成功', 'success');
                 } else {
-                    alert('解析失败: ' + data.message);
+                    showNotification('解析失败: ' + data.message, 'error');
                 }
             } catch (error) {
-                alert('请求失败: ' + error);
+                showNotification('请求失败: ' + error, 'error');
             }
         }
 
         function clearForm() {
-            if (confirm('确定要清空表单吗？')) {
+            showConfirm('确定要清空表单吗？', '清空表单', () => {
                 document.getElementById('download-form').reset();
-            }
+                showNotification('表单已清空', 'info');
+            });
         }
 
         function clearLog() {
             document.getElementById('log-output').innerHTML = '';
+            showNotification('日志已清空', 'info');
         }
 
         function showLog() {
             document.getElementById('log-card').style.display = 'block';
         }
 
-        function startLogUpdate(taskId) {
+        function startLogUpdate(taskId, isNewTask = false) {
             if (logUpdateInterval) {
                 clearInterval(logUpdateInterval);
             }
+            
+            let notificationShown = false;  // 防止重复通知
+            let lastStatus = null;  // 记录上一次的状态
+            let firstLoad = true;  // 标记是否首次加载
             
             logUpdateInterval = setInterval(async () => {
                 try {
@@ -760,18 +1103,40 @@ HTML_TEMPLATE = """
                         const logOutput = document.getElementById('log-output');
                         // 使用innerHTML显示带颜色的日志
                         logOutput.innerHTML = formatLogHtml(data.log);
-                        logOutput.scrollTop = logOutput.scrollHeight;
-                    }
-                    
-                    if (data.status === 'completed' || data.status === 'failed') {
-                        clearInterval(logUpdateInterval);
-                        updateStatus();
-                        if (data.status === 'completed') {
-                            alert('下载完成！');
-                        } else {
-                            alert('下载失败，请查看日志');
+                        
+                        // 首次加载时，如果不是新任务，滚动到顶部
+                        if (firstLoad && !isNewTask) {
+                            justSwitchedTask = true;  // 标记刚切换任务
+                            logOutput.scrollTop = 0;  // 滚动到顶部
+                            autoScrollEnabled = false;  // 默认不自动滚动
+                            firstLoad = false;
+                        } else if (firstLoad && isNewTask) {
+                            // 新任务首次加载，滚动到底部
+                            logOutput.scrollTop = logOutput.scrollHeight;
+                            firstLoad = false;
+                        } else if (autoScrollEnabled && !userIsScrolling) {
+                            // 只有在自动滚动启用且用户没有正在滚动时才自动滚动到底部
+                            logOutput.scrollTop = logOutput.scrollHeight;
                         }
                     }
+                    
+                    // 只有当前任务是新提交的任务，且状态发生变化时才显示通知
+                    if (taskId === activeNewTaskId && !notificationShown && lastStatus !== data.status) {
+                        if (data.status === 'completed' || data.status === 'failed') {
+                            clearInterval(logUpdateInterval);
+                            updateStatus();
+                            notificationShown = true;
+                            activeNewTaskId = null;  // 清除活动任务ID
+                            
+                            if (data.status === 'completed') {
+                                showNotification('下载任务已完成！', 'success', '下载完成');
+                            } else if (data.status === 'failed') {
+                                showNotification('下载任务失败，请查看日志了解详情', 'error', '下载失败');
+                            }
+                        }
+                    }
+                    
+                    lastStatus = data.status;
                 } catch (error) {
                     console.error('获取日志失败:', error);
                 }
@@ -827,9 +1192,14 @@ HTML_TEMPLATE = """
         }
 
         function viewTaskLog(taskId) {
+            // 切换任务时，重置自动滚动为false（查看历史任务默认不自动滚动）
+            if (currentTaskId !== taskId) {
+                autoScrollEnabled = false;  // 查看不同任务时默认不自动滚动
+            }
             currentTaskId = taskId;
             showLog();
-            startLogUpdate(taskId);
+            // 查看历史日志时，传入false表示不是新任务
+            startLogUpdate(taskId, false);
         }
 
         async function getSettings() {
@@ -868,12 +1238,12 @@ HTML_TEMPLATE = """
                 if (data.success) {
                     currentWorkDir = settings.default_dir;
                     document.getElementById('current-work-dir').textContent = currentWorkDir;
-                    alert(data.message);
+                    showNotification('设置已保存', 'success');
                 } else {
-                    alert('保存失败: ' + data.message);
+                    showNotification('保存失败: ' + data.message, 'error');
                 }
             } catch (error) {
-                alert('保存设置失败: ' + error);
+                showNotification('保存设置失败: ' + error, 'error');
             }
         }
 
@@ -899,7 +1269,7 @@ HTML_TEMPLATE = """
         }
 
         async function clearHistory() {
-            if (confirm('确定要清空所有下载历史吗？')) {
+            showConfirm('确定要清空所有下载历史吗？', '清空历史', async () => {
                 try {
                     const response = await fetch('/api/history/clear', {
                         method: 'POST'
@@ -907,12 +1277,12 @@ HTML_TEMPLATE = """
                     const data = await response.json();
                     if (data.success) {
                         updateHistory();
-                        alert('历史已清空');
+                        showNotification('历史已清空', 'success');
                     }
                 } catch (error) {
-                    alert('清空历史失败: ' + error);
+                    showNotification('清空历史失败: ' + error, 'error');
                 }
-            }
+            });
         }
 
         async function openDownloadFolder() {
@@ -924,10 +1294,10 @@ HTML_TEMPLATE = """
                 });
                 const data = await response.json();
                 if (!data.success) {
-                    alert('打开文件夹失败: ' + data.message);
+                    showNotification('打开文件夹失败: ' + data.message, 'error');
                 }
             } catch (error) {
-                alert('打开文件夹失败: ' + error);
+                showNotification('打开文件夹失败: ' + error, 'error');
             }
         }
 
@@ -936,12 +1306,16 @@ HTML_TEMPLATE = """
                 const response = await fetch('/api/check-bbdown');
                 const data = await response.json();
                 if (data.installed) {
-                    alert(`BBDown 已安装\\n版本: ${data.version}\\n路径: ${data.path}`);
+                    showNotification(
+                        `版本: ${data.version}<br>路径: ${data.path}`,
+                        'success',
+                        'BBDown 已安装'
+                    );
                 } else {
-                    alert('BBDown 未安装或路径不正确');
+                    showNotification('BBDown 未安装或路径不正确', 'warning');
                 }
             } catch (error) {
-                alert('检查失败: ' + error);
+                showNotification('检查失败: ' + error, 'error');
             }
         }
 
@@ -949,17 +1323,17 @@ HTML_TEMPLATE = """
             try {
                 const response = await fetch('/api/test-tools');
                 const data = await response.json();
-                let message = '工具检测结果:\\n\\n';
+                let message = '';
                 for (const [tool, result] of Object.entries(data.tools)) {
                     message += `${tool}: ${result.installed ? '✅ 已安装' : '❌ 未找到'}`;
                     if (result.version) {
                         message += ` (${result.version})`;
                     }
-                    message += '\\n';
+                    message += '<br>';
                 }
-                alert(message);
+                showNotification(message, 'info', '工具检测结果');
             } catch (error) {
-                alert('测试失败: ' + error);
+                showNotification('测试失败: ' + error, 'error');
             }
         }
 
@@ -981,6 +1355,7 @@ HTML_TEMPLATE = """
 </html>
 """
 
+# 后端代码保持不变...
 def extract_url_from_text(text):
     """从文本中提取B站URL"""
     text = text.strip()
