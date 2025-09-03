@@ -2,10 +2,10 @@
 
 🎬 基于 Flask 的 BBDown 网页版图形界面，让B站视频下载更简单！
 
-[[Python](https://img.shields.io/badge/Python-3.7%2B-blue.svg)](https://www.python.org/)
-[[Flask](https://img.shields.io/badge/Flask-2.0%2B-green.svg)](https://flask.palletsprojects.com/)
-[[BBDown](https://img.shields.io/badge/BBDown-Core-orange.svg)](https://github.com/nilaoda/BBDown)
-[[License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.7%2B-blue.svg)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-2.0%2B-green.svg)](https://flask.palletsprojects.com/)
+[![BBDown](https://img.shields.io/badge/BBDown-Core-orange.svg)](https://github.com/nilaoda/BBDown)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## ✨ 功能特性
 
@@ -21,6 +21,7 @@
 
 ### 必需依赖
 - Python 3.7+
+- Flask>=2.0.0
 - [BBDown](https://github.com/nilaoda/BBDown) (核心下载工具)
 
 ### 可选依赖
@@ -35,8 +36,15 @@
 首先需要安装 BBDown 核心工具：
 
 ```bash
-# 方式1：使用 .NET Tool (推荐)
+# 方式1：使用 .NET Tool 8.0 (推荐)
+# 安装dotnet环境并添加路径到 PATH
+wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
+chmod +x ./dotnet-install.sh
+./dotnet-install.sh
+# 快速安装
 dotnet tool install --global BBDown
+# 更新bbdown
+dotnet tool update --global BBDown
 
 # 方式2：下载预编译版本
 # 访问 https://github.com/nilaoda/BBDown/releases
@@ -55,6 +63,11 @@ pip install flask
 
 # 或使用 requirements.txt
 pip install -r requirements.txt
+
+#或使用虚拟环境（推荐）
+python3 -m venv ~/bbdown_env
+source ~/bbdown_env/bin/activate
+pip install -r requirements.txt
 ```
 
 ### 3. 运行程序
@@ -67,59 +80,14 @@ python bbdown_web.py
 
 ## 🐳 Docker 部署（可选）
 
-创建 `Dockerfile`：
-
-```dockerfile
-FROM python:3.9-slim
-
-# 安装依赖
-RUN apt-get update && apt-get install -y \
-    wget \
-    ffmpeg \
-    aria2 \
-    && rm -rf /var/lib/apt/lists/*
-
-# 安装 .NET 和 BBDown
-RUN wget https://dot.net/v1/dotnet-install.sh \
-    && chmod +x dotnet-install.sh \
-    && ./dotnet-install.sh --channel 6.0 \
-    && /root/.dotnet/dotnet tool install --global BBDown
-
-# 设置工作目录
-WORKDIR /app
-
-# 复制文件
-COPY bbdown_web.py .
-COPY requirements.txt .
-
-# 安装 Python 依赖
-RUN pip install --no-cache-dir -r requirements.txt
-
-# 设置环境变量
-ENV PATH="/root/.dotnet/tools:${PATH}"
-
-# 暴露端口
-EXPOSE 5555
-
-# 创建下载目录
-RUN mkdir -p /downloads
-
-# 启动命令
-CMD ["python", "bbdown_web.py"]
-```
-
-构建和运行：
-
 ```bash
-# 构建镜像
-docker build -t bbdown-web-gui .
-
 # 运行容器
 docker run -d \
   --name bbdown-web \
   -p 5555:5555 \
-  -v ~/Downloads:/downloads \
-  bbdown-web-gui
+  -v ./downloads:/root/Downloads/BBDown-Web \
+  --restart unless-stopped \
+  dockercheny/bbdown-web-gui
 ```
 
 ## 📖 使用说明
@@ -227,6 +195,7 @@ docker run -d \
 bbdown-web-gui/
 ├── bbdown_web.py          # 主程序文件
 ├── requirements.txt       # Python依赖
+├── docker-compose.yml     # Docker说明
 ├── README.md             # 项目说明
 ├── LICENSE               # 许可证
 └── screenshots/          # 截图目录
