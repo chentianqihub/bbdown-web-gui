@@ -643,7 +643,7 @@ HTML_TEMPLATE = """
                         <div class="checkbox-group">
                             <label><input type="checkbox" name="skip_mux"> 跳过混流</label>
                             <label><input type="checkbox" name="force_http"> 强制HTTP</label>
-                            <label><input type="checkbox" name="show_all"> 显示所有分P</label>
+                            <label><input type="checkbox" name="show_all"> 显示所有分P标题</label>
                             <label><input type="checkbox" name="use_mp4box"> 使用MP4Box混流</label>
                         </div>
                     </div>
