@@ -1,0 +1,9 @@
+services:
+  bbdown-web:
+    image: dockercheny/bbdown-web
+    container_name: bbdown-web-gui
+    ports:
+      - "5555:5555"
+    volumes:
+      - ./downloads:/root/Downloads/BBDown-Web
+    restart: unless-stopped
