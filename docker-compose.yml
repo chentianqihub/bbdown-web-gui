@@ -1,6 +1,6 @@
 services:
   bbdown-web:
-    image: dockercheny/bbdown-web
+    image: dockercheny/bbdown-web-gui
     container_name: bbdown-web-gui
     ports:
       - "5555:5555"
